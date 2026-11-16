@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>From internet text to an AI assistant</title>
+  <style>
+    body { max-width: 850px; margin: 40px auto; padding: 0 24px; font: 16px/1.6 system-ui, sans-serif; color: #202b35; }
+    h1, h2, h3 { line-height: 1.25; color: #173b50; }
+    h2 { margin-top: 32px; border-top: 1px solid #dce3e8; padding-top: 20px; }
+    h3 { margin-bottom: 8px; font-size: 1.05rem; }
+    a { color: #075c93; }
+    li { margin: 6px 0; }
+    code { background: #f1f4f6; padding: 2px 4px; }
+    .prompt { display: block; box-sizing: border-box; width: 100%; min-height: 120px; margin: 8px 0; padding: 12px; font: inherit; line-height: 1.5; border: 1px solid #ccd5dc; border-radius: 4px; resize: vertical; }
+    button { font: inherit; padding: 5px 12px; cursor: pointer; }
+    details { margin: 6px 0 14px; }
+    summary { cursor: pointer; color: #075c93; }
+    details p { margin: 6px 0; }
+    .resource-table { overflow-x: auto; }
+    .resource-table table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    .resource-table th, .resource-table td { padding: 10px; border: 1px solid #dce3e8; text-align: left; vertical-align: top; }
+    .resource-table th { background: #f1f4f6; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>From internet text to an AI assistant</h1>
+  <p>Watch <a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">Karpathy’s video</a> (approximately 3 hours 30 minutes) for the explanations and use the steps below to practise.</p>
+  <p><strong>The priority is developing your understanding.</strong> An LLM can complete these steps for you, but I recommend doing them yourself. If you must choose, watch the video rather than complete the steps. At the oral exam, I will ask you about these concepts and how they apply to business (see the examples below).</p>
+
+  <section id="oral-exam">
+    <h2>Examples for the oral exam</h2>
+    <ol>
+      <li><strong>Training data:</strong> How could a model’s training data affect its market analysis?
+        <details><summary>Answer</summary><p>Training data describes past conditions. Market changes after training require fresh information.</p></details>
+      </li>
+      <li><strong>Training versus inference:</strong> Does uploading a company report change the model’s weights?
+        <details><summary>Answer</summary><p>No. Uploading a report adds context for the response. Training updates the model’s weights.</p></details>
+      </li>
+      <li><strong>Base models versus assistants:</strong> Why might a base model continue a customer’s question instead of answering it?
+        <details><summary>Answer</summary><p>A base model learns to continue documents. Assistant post-training teaches it to respond to instructions and questions.</p></details>
+      </li>
+      
+      <li><strong>Hallucinations:</strong> Why might a model confidently invent a supplier’s history or a source for a business claim?
+        <details><summary>Answer</summary><p>The model learns to imitate human-written answers. Hallucinations occur when it fills a familiar answer pattern with invented details. Predicting likely text does not verify facts.</p></details>
+      </li>
+      <li><strong>Context and tools:</strong> Why provide the actual company report or retrieve current information rather than rely on the model’s recollection?
+        <details><summary>Answer</summary><p>Providing the report or retrieving information puts relevant evidence in the context, including facts absent from training.</p></details>
+      </li>
+      <li><strong>Calculations:</strong> Why use executed code to check invoice totals rather than trust a fluent explanation?
+        <details><summary>Answer</summary><p>Executed code calculates totals using explicit arithmetic. A generated explanation predicts text rather than executing the calculation.</p></details>
+      </li>
+      <li><strong>Reinforcement learning:</strong> Why is reinforcement learning easier for arithmetic than for writing a good sales email?
+        <details><summary>Answer</summary><p>Arithmetic has answers that code can check and reward automatically. A good sales email depends on human judgment, so defining the reward is harder.</p></details>
+      </li>
+    </ol>
+  </section>
+
+  <section id="repository">
+    <h2>Save your work</h2>
+    <p><strong>Case requirement: Save all files you create in a GitHub repository and share its link with me.</strong></p>
+  </section>
+
+  <section id="step-1" aria-labelledby="step-1-title">
+    <h2 id="step-1-title">1. Training data</h2>
+
+    <h3>Inspect</h3>
+    <ol>
+      <li>Open <a href="https://huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-v1">the FineWeb topic map</a>.</li>
+    </ol>
+
+    <h3>Download</h3>
+    <ol>
+      <li>Open <a href="https://datasets-server.huggingface.co/rows?dataset=HuggingFaceFW%2Ffineweb&amp;config=sample-10BT&amp;split=train&amp;offset=0&amp;length=10">10 FineWeb documents</a>.</li>
+      <li>Press Ctrl+S (Mac: Command+S). Save as <code>fineweb_sample.json</code>.</li>
+    </ol>
+
+    <h3>Concatenate</h3>
+    <ol>
+      <li>Upload the JSON file to your LLM and paste this prompt:
+        <textarea id="concatenate-prompt" class="prompt" aria-label="Prompt to copy" readonly>Use code to extract only the text fields from all 10 documents in the attached JSON. Keep their original order. Replace line breaks with spaces and join the documents with a single space, producing one continuous block of text. Do not summarize, rewrite, or add headings, metadata, or separators. Save the result as a UTF-8 plain-text file named fineweb_corpus.txt and provide the file for download.</textarea>
+        <button id="copy-prompt" type="button" aria-live="polite">Copy prompt</button>
+      </li>
+      <li>Download and open <code>fineweb_corpus.txt</code>.</li>
+    </ol>
+  </section>
+  <section id="step-2" aria-labelledby="step-2-title">
+    <h2 id="step-2-title">2. Text representation</h2>
+    <h3>Bits and bytes</h3>
+    <ol>
+      <li>Copy the first sentence from <code>fineweb_corpus.txt</code>.</li>
+      <li>Open <a href="https://gchq.github.io/CyberChef/#recipe=To_Binary('Space',8)">CyberChef’s binary converter</a> (free). Paste the sentence into <strong>Input</strong>. Each eight-digit group in <strong>Output</strong> represents one byte. Save the output as <code>fineweb_bits.txt</code> using the output’s Save icon.</li>
+      <li>Open <a href="https://gchq.github.io/CyberChef/#recipe=To_Decimal('Space',false)">the decimal byte converter</a>. Paste the same sentence into <strong>Input</strong>. Save the output as <code>fineweb_bytes.txt</code>.</li>
+    </ol>
+    <h3>Tokenization</h3>
+    <ol>
+      <li>Paste <code>fineweb_corpus.txt</code> into <a href="https://tiktokenizer.vercel.app/">Tiktokenizer</a>. Keep the default <strong>GPT-4o</strong> selection.</li>
+      <li>Copy the token IDs and save them as <code>fineweb_tokens.txt</code>.</li>
+    </ol>
+  </section>
+
+  <section id="step-3">
+    <h2>3. Train a small model</h2>
+    <ol>
+      <li>Attach <code>fineweb_corpus.txt</code> and <code>fineweb_tokens.txt</code> to your LLM and paste:
+        <textarea id="training-prompt" class="prompt" aria-label="Training prompt to copy" readonly>Create the Python scripts and requirements.txt for me to run locally. Do not execute code, install packages, train the model, or generate results yourself. Provide the files for download and the exact terminal commands I must run.
+
+The scripts must use GPT-4o’s o200k_base tokenizer and read fineweb_corpus.txt and fineweb_tokens.txt. Validate that the token IDs match the corpus; regenerate them from the corpus if needed. Train a tiny, randomly initialized causal transformer to predict the next token for about 60 seconds on CPU. Remap observed token IDs to a compact internal vocabulary and map them back for decoding.
+
+When I run the training script, it must print live lines: step | loss | elapsed time | tokens/second. Before training, every 20 updates, and at the end, generate text from the same short sentence beginning and random seed. Stream the generated tokens as they appear. Save the training log, loss plot, generated samples and model checkpoint. All results must come from my local run; do not supply invented outputs.</textarea>
+        <button id="copy-training-prompt" data-copy="training-prompt" type="button" aria-live="polite">Copy prompt</button>
+      </li>
+      <li>Run the program. Watch the loss and compare the generated text before and after training. Save its files.</li>
+    </ol>
+    <h3>Test the trained model</h3>
+    <ol>
+      <li>Ask your LLM to write a script that loads your trained model, completes <q>The sky is …</q> 100 times, and saves the results as <code>sky_completions.txt</code>. Ask for the script only; run it yourself.</li>
+      <li>Run the script and inspect the completions.</li>
+      <li>This may fail if <q>The sky is …</q> contains tokens missing from your model’s small training vocabulary. Attach your corpus and training script to your LLM and paste:
+        <textarea id="corpus-sentence-prompt" class="prompt" aria-label="Training-data sentence prompt to copy" readonly>Write a sampling script that selects a short sentence appearing exactly in fineweb_corpus.txt, preferably with a common opening. Use its first few words as the sentence beginning. The script must check that all tokens in this beginning exist in the trained model’s saved vocabulary and choose another sentence if needed. Generate 100 completions and save the chosen sentence, beginning and outputs as corpus_completions.txt. Provide the script and terminal command only. Do not run it or invent results.</textarea>
+        <button data-copy="corpus-sentence-prompt" type="button" aria-live="polite">Copy prompt</button>
+      </li>
+      <li>Run the new script and inspect <code>corpus_completions.txt</code>.</li>
+    </ol>
+  </section>
+
+  <section id="step-4">
+    <h2>4. Base model and assistant</h2>
+    <ol>
+      <li>Open <a href="https://stanley-00-slm-testing.hf.space/">SLM Testing</a> and untick <strong>Use GPU</strong>.</li>
+      <li>Select <code>HuggingFaceTB/SmolLM2-135M</code> (a base model), click <strong>Load Model</strong>, and select <strong>Completion</strong> mode.</li>
+      <li>Enter a prompt and click <strong>Generate</strong>.</li>
+      <li>Repeat with <code>HuggingFaceTB/SmolLM2-135M-Instruct</code> (its assistant version), using <strong>Chat</strong> mode.</li>
+      <li>Run both on <q>What is 2+2?</q> and <q>Here is my top 10 list of landmarks to see in Paris:</q>. Repeat each three times and save the outputs.</li>
+    </ol>
+    <h3>Prompt an assistant</h3>
+    <ol>
+      <li>Ask the base model <q>Why is the sky blue?</q> in <strong>Completion</strong> mode. Save its output.</li>
+      <li>Ask your LLM to write a short example conversation with <code>Human:</code> and <code>Assistant:</code> turns, ending with <code>Human: Why is the sky blue?</code> followed by <code>Assistant:</code>, without answering that final question.</li>
+      <li>Paste that conversation into the base model in <strong>Completion</strong> mode. Save and compare the two outputs.</li>
+    </ol>
+    <h3>Knowledge cutoff</h3>
+    <ol>
+      <li>For example, complete <q>The 2020 Nobel Prize in Economic Sciences was awarded to</q> and <q>The 2026 Nobel Prize in Economic Sciences was awarded to</q>. Check the completions against reliable sources and save them.</li>
+    </ol>
+  </section>
+
+  <section id="step-5">
+    <h2>5. Supervised fine-tuning</h2>
+    <ol>
+      <li>Get three questions and their answers from the <a href="https://huggingface.co/datasets/OpenAssistant/oasst1">OpenAssistant dataset</a>. Save them as <code>conversations.json</code>.</li>
+    </ol>
+  </section>
+
+  <section id="step-6">
+    <h2>6. Hallucinations, thinking and tools</h2>
+    <ol>
+      <li>Ask an assistant five factual questions about one obscure article: first without the article, then with it attached. Check and save both sets of answers.</li>
+      <li>Ask <q>Who created you?</q> and check the answer against the model’s documentation.</li>
+      <li>Ask <q>A retailer buys 1,247 units at €38.75 each. It sells 83% of them, rounded down to whole units, at €64.90 each with a 12% discount. Customers return 7% of the sold units, rounded down, for full refunds; those units cannot be resold. Unsold units sell for €21.40 each. Shipping costs €2.85 per unit originally bought, and fixed costs are €6,730. What is the final profit? Round only the final amount to two decimals.</q> First request <q>Give only the final answer</q>, then <q>Show the calculation before answering</q>. Repeat both requests with a thinking model and a non-thinking model. Compare the accuracy and outputs to check whether there is a difference between the models. Save the outputs and record which models you used.</li>
+      <li>Ask which decimal is larger, 9.11 or 9.9; count the r’s in <code>strawberry</code>; and extract every third character of <code>Ubiquitous</code>, starting with the first. Repeat using executed code. Save the results.</li>
+    </ol>
+  </section>
+
+  <section id="step-7">
+    <h2>7. Run a model locally</h2>
+    <ol>
+      <li>Use <a href="https://lmstudio.ai/docs/app/basics/download-model">LM Studio</a> to download and run a small instruct model.</li>
+      <li>Ask it for a pelican joke. Save a screenshot showing the model name and its response as <code>local_model.png</code>.</li>
+    </ol>
+  </section>
+
+
+  <section id="theory-resources">
+    <h2>Knowledge objectives: preparation for the exam</h2>
+    <p>The Anthropic course and IBM videos below form part of the theory and knowledge objectives of this course. You do not need to complete any additional tasks or submit anything for this case in connection with these resources. For the oral exam, you need to have the knowledge presented in the Anthropic course and the listed IBM videos.</p>
+    <h3>Anthropic course</h3>
+    <p><a href="https://www.coursera.org/learn/ai-capabilities-and-limitations">AI Capabilities and Limitations — Anthropic Academy on Coursera</a> (free).</p>
+    <h3>IBM Technology videos</h3>
+    <div class="resource-table">
+    <table>
+      <thead><tr><th scope="col">Concept</th><th scope="col">Video</th></tr></thead>
+      <tbody>
+        <tr data-resource-id="ibm-1"><td>How LLMs work</td><td><a href="https://www.youtube.com/watch?v=5sLYAQS9sWQ">How Large Language Models Work</a></td></tr>
+        <tr data-resource-id="ibm-2"><td>AI, machine learning and generative AI</td><td><a href="https://www.youtube.com/watch?v=qYNweeDHiyU">AI, Machine Learning, Deep Learning and Generative AI Explained</a></td></tr>
+        <tr data-resource-id="ibm-3"><td>Transformers</td><td><a href="https://www.youtube.com/watch?v=ZXiruGOCn9s">What are Transformers?</a></td></tr>
+        <tr data-resource-id="ibm-4"><td>Context windows</td><td><a href="https://www.youtube.com/watch?v=-QVoIxEpFkM">What is a Context Window? Unlocking LLM Secrets</a></td></tr>
+        <tr data-resource-id="ibm-5"><td>Hallucinations</td><td><a href="https://www.youtube.com/watch?v=cfqtFvWOfg0">Why Large Language Models Hallucinate</a></td></tr>
+        <tr data-resource-id="ibm-6"><td>Probabilistic versus deterministic outcomes</td><td><a href="https://www.youtube.com/watch?v=i1ZmNUbRGD4">AI Agents vs Business Rules: Which Should Make Decisions?</a></td></tr>
+        <tr data-resource-id="ibm-7"><td>Embeddings</td><td><a href="https://www.youtube.com/watch?v=wgfSDrqYMJ4">What are Word Embeddings?</a></td></tr>
+        <tr data-resource-id="ibm-8"><td>Vector databases</td><td><a href="https://www.youtube.com/watch?v=t9IDoenf-lo">What is a Vector Database?</a></td></tr>
+        <tr data-resource-id="ibm-9"><td>Retrieval-augmented generation (RAG)</td><td><a href="https://www.youtube.com/watch?v=T-D1OfcDW1M">What is Retrieval-Augmented Generation?</a></td></tr>
+        <tr data-resource-id="ibm-14"><td>Prompt versus context engineering</td><td><a href="https://www.youtube.com/watch?v=vD0E3EUb8-8">Context Engineering vs. Prompt Engineering</a></td></tr>
+        <tr data-resource-id="ibm-15"><td>Tool calling</td><td><a href="https://www.youtube.com/watch?v=h8gMhXYAv1k">What is Tool Calling? Connecting LLMs to Your Data</a></td></tr>
+        <tr data-resource-id="ibm-16"><td>MCP and APIs</td><td><a href="https://www.youtube.com/watch?v=7j1t3UZA1TY">MCP vs API: Simplifying AI Agent Integration with External Data</a></td></tr>
+        <tr data-resource-id="ibm-17"><td>AI agents</td><td><a href="https://www.youtube.com/watch?v=F8NKVhkZZWI">What are AI Agents?</a></td></tr>
+        <tr data-resource-id="ibm-18"><td>Business workflows</td><td><a href="https://www.youtube.com/watch?v=4Vg2aVtrX8k">Building AI Agents for Real-World Problems &amp; Workflows</a></td></tr>
+        <tr data-resource-id="ibm-19"><td>Agent skills</td><td><a href="https://www.youtube.com/watch?v=Lg-meK5IU8Q">What AI Agent Skills Are and How They Work</a></td></tr>
+        <tr data-resource-id="ibm-21"><td>Memory</td><td><a href="https://www.youtube.com/watch?v=BacJ6sEhqMo">The Four Types of Memory Every AI Agent Needs</a></td></tr>
+        <tr data-resource-id="ibm-23"><td>Reasoning models</td><td><a href="https://www.youtube.com/watch?v=enLbj0igyx4">What Are Large Reasoning Models?</a></td></tr>
+        <tr data-resource-id="ibm-24"><td>Complete AI systems</td><td><a href="https://www.youtube.com/watch?v=RRKwmeyIc24">What Is an AI Stack?</a></td></tr>
+        <tr data-resource-id="ibm-25"><td>Prompt injection</td><td><a href="https://www.youtube.com/watch?v=jrHRe9lSqqA">What Is a Prompt Injection Attack?</a></td></tr>
+        <tr data-resource-id="ibm-27"><td>Benchmarks</td><td><a href="https://www.youtube.com/watch?v=kDY4TodQwbg">What are Large Language Model Benchmarks?</a></td></tr>
+        <tr data-resource-id="ibm-28"><td>Evaluating AI outputs</td><td><a href="https://www.youtube.com/watch?v=trfUBIDeI1Y">LLM as a Judge: Scaling AI Evaluation Strategies</a></td></tr>
+        <tr data-resource-id="ibm-29"><td>Explainability</td><td><a href="https://www.youtube.com/watch?v=jFHPEQi55Ko">What is Explainable AI?</a></td></tr>
+        <tr data-resource-id="ibm-33"><td>Synthetic data</td><td><a href="https://www.youtube.com/watch?v=HIusawrGBN4">What is Synthetic Data?</a></td></tr>
+        <tr data-resource-id="ibm-34"><td>Selecting business applications</td><td><a href="https://www.youtube.com/watch?v=C1ecR-sIE1A">Select the right AI use case for your business</a></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+</main>
+<script>
+  document.getElementById('copy-prompt').dataset.copy = 'concatenate-prompt';
+  document.querySelectorAll('button[data-copy]').forEach(button => button.addEventListener('click', async function () {
+    const prompt = document.getElementById(this.dataset.copy);
+    try {
+      await navigator.clipboard.writeText(prompt.value);
+      this.textContent = 'Copied';
+    } catch {
+      prompt.focus();
+      prompt.select();
+      this.textContent = document.execCommand('copy') ? 'Copied' : 'Press Ctrl+C (Mac: Command+C)';
+    }
+  }));
+</script>
+</body>
+</html>
